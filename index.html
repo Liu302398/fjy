@@ -1,0 +1,380 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>致冯景源</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    background: radial-gradient(ellipse at 50% 35%, #2e2822 0%, #171412 70%, #0d0b0a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+    overflow: hidden;
+    perspective: 1600px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 背景微光 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(255,220,160,.06), transparent 60%);
+    pointer-events: none;
+  }
+
+  /* ===== 信封 ===== */
+  .envelope {
+    position: relative;
+    width: 400px;
+    height: 270px;
+    cursor: pointer;
+    transform-style: preserve-3d;
+    transition: transform .5s ease, opacity .6s ease, filter .6s ease;
+  }
+  .envelope:hover { transform: translateY(-6px) scale(1.02); }
+  .envelope.gone {
+    opacity: 0;
+    transform: translateY(30px) scale(.9);
+    pointer-events: none;
+    filter: blur(4px);
+  }
+
+  /* 信封背板 */
+  .env-body {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(165deg, #f7ecdb 0%, #ecdcc5 100%);
+    border-radius: 8px;
+    box-shadow:
+      0 40px 70px -25px rgba(0,0,0,.75),
+      0 15px 30px -15px rgba(0,0,0,.5),
+      inset 0 0 0 1px rgba(255,255,255,.5);
+  }
+
+  /* 信封正面口袋（V形开口） */
+  .env-front {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(170deg, #f9f1e4 0%, #e9d8bf 100%);
+    border-radius: 8px;
+    clip-path: polygon(0 0, 0 100%, 100% 100%, 100% 0, 50% 52%);
+    box-shadow: inset 0 -2px 8px rgba(160,130,90,.15);
+    z-index: 4;
+  }
+  .env-front::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to bottom right, transparent 49.6%, rgba(180,150,110,.18) 49.6%, rgba(180,150,110,.18) 50.4%, transparent 50.4%),
+      linear-gradient(to bottom left, transparent 49.6%, rgba(180,150,110,.18) 49.6%, rgba(180,150,110,.18) 50.4%, transparent 50.4%);
+    pointer-events: none;
+  }
+
+  /* 翻盖 */
+  .env-flap {
+    position: absolute;
+    top: 0; left: 0;
+    width: 0; height: 0;
+    border-left: 200px solid transparent;
+    border-right: 200px solid transparent;
+    border-top: 138px solid #e3d0b6;
+    filter: drop-shadow(0 6px 8px rgba(90,70,45,.25));
+    transform-origin: top center;
+    transition: transform .75s cubic-bezier(.6,0,.3,1), border-top-color .4s ease;
+    z-index: 5;
+    backface-visibility: hidden;
+  }
+  .envelope.open .env-flap {
+    transform: rotateX(180deg);
+    border-top-color: #d8c2a4;
+  }
+
+  /* 打开按钮 */
+  .open-btn {
+    position: absolute;
+    left: 50%; top: 58%;
+    transform: translate(-50%, -50%);
+    z-index: 6;
+    padding: 13px 34px;
+    font-family: inherit;
+    font-size: 17px;
+    letter-spacing: 4px;
+    color: #4a3826;
+    background: linear-gradient(180deg, #fffaf0, #f2e3cd);
+    border: 1px solid rgba(160,130,90,.45);
+    border-radius: 100px;
+    cursor: pointer;
+    box-shadow:
+      0 6px 14px -4px rgba(80,60,35,.35),
+      inset 0 1px 0 rgba(255,255,255,.9);
+    transition: all .25s ease;
+    white-space: nowrap;
+  }
+  .open-btn:hover {
+    background: linear-gradient(180deg, #fffdf8, #f7ead6);
+    box-shadow: 0 10px 20px -6px rgba(80,60,35,.45), inset 0 1px 0 rgba(255,255,255,1);
+    transform: translate(-50%, -50%) translateY(-2px);
+  }
+  .open-btn:active {
+    transform: translate(-50%, -50%) translateY(1px);
+    box-shadow: 0 3px 8px -3px rgba(80,60,35,.4);
+  }
+  .envelope.open .open-btn {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s ease;
+  }
+
+  /* 提示文字 */
+  .hint {
+    position: absolute;
+    bottom: -46px; left: 50%;
+    transform: translateX(-50%);
+    color: rgba(230,210,180,.4);
+    font-size: 12px;
+    letter-spacing: 6px;
+    white-space: nowrap;
+    transition: opacity .4s ease;
+  }
+  .envelope.gone .hint { opacity: 0; }
+
+  /* ===== 信纸 ===== */
+  .letter {
+    position: fixed;
+    top: 50%; left: 50%;
+    width: min(620px, 92vw);
+    height: min(84vh, 760px);
+    transform: translate(-50%, -50%) scale(.15) translateY(30px);
+    transform-origin: 50% 90%;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,250,235,.9), transparent 55%),
+      linear-gradient(170deg, #fffdf7 0%, #fbf5e9 55%, #f6eedd 100%);
+    border-radius: 3px;
+    box-shadow:
+      0 60px 100px -30px rgba(0,0,0,.85),
+      0 0 0 1px rgba(150,125,90,.18),
+      inset 0 0 80px rgba(200,170,120,.07);
+    overflow: hidden;
+    transition:
+      transform 1s cubic-bezier(.22,1,.36,1),
+      opacity .7s ease;
+  }
+  .letter.show {
+    transform: translate(-50%, -50%) scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 信纸内滚动区 */
+  .letter-inner {
+    height: 100%;
+    overflow-y: auto;
+    padding: 62px 56px 70px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(170,145,105,.4) transparent;
+  }
+  .letter-inner::-webkit-scrollbar { width: 6px; }
+  .letter-inner::-webkit-scrollbar-track { background: transparent; }
+  .letter-inner::-webkit-scrollbar-thumb {
+    background: rgba(170,145,105,.35);
+    border-radius: 3px;
+  }
+
+  /* 信纸横线纹理 */
+  .letter::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 40px,
+      rgba(160,135,95,.06) 40px,
+      rgba(160,135,95,.06) 41px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 信纸左侧红色竖线 */
+  .letter::after {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0; left: 34px;
+    width: 1px;
+    background: linear-gradient(to bottom, transparent, rgba(190,90,80,.25) 12%, rgba(190,90,80,.25) 88%, transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .letter-inner > * { position: relative; z-index: 1; }
+
+  /* 抬头 */
+  .letter-title {
+    font-size: 21px;
+    letter-spacing: 3px;
+    color: #3d3020;
+    font-weight: 600;
+    margin-bottom: 34px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(170,140,100,.25);
+  }
+
+  /* 正文段落 */
+  .letter p {
+    font-size: 16px;
+    line-height: 2.05;
+    color: #3f3527;
+    text-indent: 2em;
+    margin-bottom: 22px;
+    letter-spacing: .5px;
+    text-align: justify;
+  }
+
+  /* 落款 */
+  .signature {
+    text-align: right;
+    font-size: 16px;
+    color: #4a3d2b;
+    letter-spacing: 2px;
+    margin-top: 20px;
+    padding-right: 10px;
+  }
+
+  /* 关闭按钮 */
+  .close-btn {
+    position: absolute;
+    top: 16px; right: 18px;
+    width: 34px; height: 34px;
+    border: none;
+    background: transparent;
+    color: #a89373;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    border-radius: 50%;
+    transition: all .2s ease;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  .close-btn:hover {
+    background: rgba(170,145,105,.12);
+    color: #6b553a;
+  }
+
+  /* 响应式 */
+  @media (max-width: 520px) {
+    .envelope { width: 300px; height: 202px; }
+    .env-flap {
+      border-left-width: 150px;
+      border-right-width: 150px;
+      border-top-width: 104px;
+    }
+    .open-btn { font-size: 15px; padding: 11px 26px; letter-spacing: 3px; }
+    .letter-inner { padding: 44px 30px 56px; }
+    .letter-title { font-size: 18px; }
+    .letter p { font-size: 15px; line-height: 1.95; }
+    .letter::after { left: 18px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 信封 -->
+  <div class="envelope" id="envelope">
+    <div class="env-body"></div>
+    <div class="env-front"></div>
+    <div class="env-flap"></div>
+    <button class="open-btn" id="openBtn">打 开 信 封</button>
+    <div class="hint">A LETTER FOR YOU</div>
+  </div>
+
+  <!-- 信纸 -->
+  <div class="letter" id="letter">
+    <button class="close-btn" id="closeBtn" aria-label="关闭">✕</button>
+    <div class="letter-inner">
+      <div class="letter-title">To 冯景源</div>
+
+      <p>见字如面，我还记得那个秋天深夜，你闯入了我的世界，我普遍的认为我只是一个很普通的很搞笑、自满的一个平平无奇的正常人。</p>
+
+      <p>但天不遂人愿，我看到了一个我人生中的一个诡异生物（一个形容，可能有点损），我从未有过如此想去捏一个人的脸，后来，你告诉我那些事，我起初是不相信的，我不敢相信我这么一个普通人会遇到这种事，我也不敢去说我的诡异心理，其实你问我是不是喜欢你的时候，我感觉害怕，我在想我是不是真的喜欢你，但我的性取向应该是正常的，防止你觉得我鬣，我应该回的委婉一点，我觉得这种心理挺鬣的，一边抗拒一边享受，难道我是M吗？我应该是个正常人啊😫。</p>
+
+      <p>我真的太过于自卑了，很多时候我都认为我很恶心，你不觉得，天天有一张丑脸往你身上凑很难受吗……算了，反正你也不是正常人。</p>
+
+      <p>你还记得我上学期一直跟你说我毁在你手上了吗，我本来以为我会平平淡淡的过完我的学生时期，有几个知心的朋友，出去玩的时候能叫上我，我就知足了。但上了高中之后，我想提验一些更加不同的人生，我大胆的去违反了校规，却实我感觉高中挺充实的，更多的是17班是，我在这么多班级（我小学转过四次学）唯二没有人讨厌我（起码我没发现）的班，我挺想呆在我们班的……（话密了）</p>
+
+      <p>其实我更希望的是你不要过多的与人争吵，让自己更加适应那种与人为善的交际关系，不让自己每天都活在自我焦虑和烦恼中，真的会很难受（不想睡觉吃东西没胃口，看到任何事物都很烦），其实我认为每个人都有自己选择人生的机会，没必要太过在意别人的目光，但我真的无法抛开那种流言蜚语的光耀照的人刺骨的痛，希望你更加的乐观开朗，不在困顿于他人的影响与自我内耗中。</p>
+
+      <div class="signature">你的朋友</div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  const envelope = document.getElementById('envelope');
+  const openBtn  = document.getElementById('openBtn');
+  const letter   = document.getElementById('letter');
+  const closeBtn = document.getElementById('closeBtn');
+
+  let opened = false;
+
+  function openLetter() {
+    if (opened) return;
+    opened = true;
+
+    /* 1. 翻盖缓缓掀开 */
+    envelope.classList.add('open');
+
+    /* 2. 信纸从信封中“生长”出来 */
+    setTimeout(function () {
+      letter.classList.add('show');
+    }, 420);
+
+    /* 3. 信封淡出退场 */
+    setTimeout(function () {
+      envelope.classList.add('gone');
+    }, 620);
+  }
+
+  function closeLetter() {
+    letter.classList.remove('show');
+    setTimeout(function () {
+      envelope.classList.remove('gone', 'open');
+      opened = false;
+    }, 500);
+  }
+
+  openBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    openLetter();
+  });
+
+  envelope.addEventListener('click', function (e) {
+    if (e.target.closest('.open-btn')) return;
+    openLetter();
+  });
+
+  closeBtn.addEventListener('click', closeLetter);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && opened) closeLetter();
+  });
+})();
+</script>
+</body>
+</html>
+```
